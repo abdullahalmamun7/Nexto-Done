@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Nexto",
+  "description": "A friendly and intelligent chatbot assistant named Nexto, built with the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
