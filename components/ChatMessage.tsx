@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion } from 'motion/react';
 import type { Message } from '../types';
 import NextoLogo from './NextoLogo';
 import UserAvatar from './UserAvatar';
@@ -42,17 +43,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading }) => {
 
   if (isUser) {
     return (
-      <div className="flex justify-end items-start gap-3">
+      <motion.div 
+        initial={{ opacity: 0, y: 10, x: 10 }}
+        animate={{ opacity: 1, y: 0, x: 0 }}
+        className="flex justify-end items-start gap-3"
+      >
         <div className="bg-blue-500 text-white rounded-xl rounded-br-none p-3 max-w-lg shadow-md">
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
         <UserAvatar className="w-8 h-8" />
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex items-start gap-3">
+    <motion.div 
+      initial={{ opacity: 0, y: 10, x: -10 }}
+      animate={{ opacity: 1, y: 0, x: 0 }}
+      className="flex items-start gap-3"
+    >
        <NextoLogo className="w-8 h-8"/>
        <div>
          <p className="font-bold text-gray-700 mb-1">Nexto</p>
@@ -60,11 +69,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading }) => {
             {isLoading && !message.content ? (
               <TypingIndicator />
             ) : (
-              <div className="text-gray-800 prose prose-sm max-w-none" dangerouslySetInnerHTML={formatContent(message.content)}></div>
+              <div className="text-gray-800 prose prose-sm max-w-none relative">
+                <div dangerouslySetInnerHTML={formatContent(message.content)}></div>
+                {isLoading && (
+                  <motion.span 
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ repeat: Infinity, duration: 0.8 }}
+                    className="inline-block w-2 h-4 bg-blue-500 ml-1 align-middle"
+                  />
+                )}
+              </div>
             )}
          </div>
        </div>
-    </div>
+    </motion.div>
   );
 };
 
