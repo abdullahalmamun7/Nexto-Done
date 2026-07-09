@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
-import { Mic, History, Settings, Trash2, X } from 'lucide-react';
+import { Mic, History, Settings, Trash2, X, Bot, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Message } from './types';
 import ChatMessage from './components/ChatMessage';
@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [voiceVolume, setVoiceVolume] = useState(0);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSylhetyAIOpen, setIsSylhetyAIOpen] = useState(false);
+  const [isSylhetyAIFullscreen, setIsSylhetyAIFullscreen] = useState(false);
   const [appVolume, setAppVolume] = useState(100);
   const [selectedVoice, setSelectedVoice] = useState('Zephyr');
 
@@ -74,13 +76,13 @@ const App: React.FC = () => {
     }
   }, [messages, isLoading]);
 
-  const handleSendMessage = async (userInput: string) => {
-    if (isLoading || !userInput.trim()) return;
+  const handleSendMessage = async (userInput: string, imageBase64?: string) => {
+    if (isLoading || (!userInput.trim() && !imageBase64)) return;
 
     setIsLoading(true);
     setError(null);
 
-    const userMessage: Message = { role: 'user', content: userInput };
+    const userMessage: Message = { role: 'user', content: userInput, image: imageBase64 };
     setMessages(prevMessages => [...prevMessages, userMessage]);
 
     try {
@@ -88,7 +90,27 @@ const App: React.FC = () => {
         throw new Error('Chat is not initialized.');
       }
       
-      const stream = await chatRef.current.sendMessageStream({ message: userInput });
+      let messageContent: string | any[] = userInput;
+
+      if (imageBase64) {
+        // Extract base64 data and mime type
+        const match = imageBase64.match(/^data:(image\/[a-zA-Z]*);base64,([^\"]*)$/);
+        if (match) {
+           const mimeType = match[1];
+           const data = match[2];
+           messageContent = [
+             userInput,
+             {
+               inlineData: {
+                 data,
+                 mimeType
+               }
+             }
+           ];
+        }
+      }
+
+      const stream = await chatRef.current.sendMessageStream({ message: messageContent });
       
       let modelResponse = '';
       setMessages(prev => [...prev, { role: 'model', content: '' }]);
@@ -129,7 +151,15 @@ const App: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button 
+            onClick={() => setIsSylhetyAIOpen(true)}
+            className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors rounded-full flex items-center gap-1.5 border border-blue-200 shadow-sm whitespace-nowrap"
+            aria-label="Switch to Sylhety AI"
+          >
+            <Bot size={14} />
+            Switch to Sylhety AI
+          </button>
           <button 
             onClick={() => setIsHistoryOpen(true)}
             className="p-2 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50"
@@ -330,6 +360,78 @@ const App: React.FC = () => {
                     Save History to File
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Sylhety AI Modal */}
+      <AnimatePresence>
+        {isSylhetyAIOpen && (
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 sm:p-6">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSylhetyAIOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            {/* Modal */}
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={`relative bg-white shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
+                isSylhetyAIFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-4xl h-[85vh] rounded-2xl'
+              }`}
+            >
+              {/* Header */}
+              <div className="bg-gray-50 p-3 border-b flex justify-between items-center shrink-0">
+                <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                  <Bot size={20} className="text-blue-600" /> 
+                  <span>Sylhety AI</span>
+                </h2>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => {
+                        const iframe = document.getElementById('sylhety-iframe') as HTMLIFrameElement;
+                        if (iframe) iframe.src = iframe.src;
+                    }} 
+                    className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                    title="Refresh"
+                  >
+                    <RefreshCw size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setIsSylhetyAIFullscreen(!isSylhetyAIFullscreen)} 
+                    className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                    title={isSylhetyAIFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  >
+                    {isSylhetyAIFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+                  <div className="w-px h-5 bg-gray-300 mx-1"></div>
+                  <button 
+                    onClick={() => setIsSylhetyAIOpen(false)} 
+                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                    title="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Iframe */}
+              <div className="flex-1 w-full bg-white relative">
+                <iframe 
+                  id="sylhety-iframe"
+                  src="https://sylhety-ai.vercel.app/" 
+                  className="absolute inset-0 w-full h-full border-0"
+                  title="Sylhety AI"
+                  allow="microphone"
+                />
               </div>
             </motion.div>
           </div>

@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { ImagePlus, X } from 'lucide-react';
 
 // Define SpeechRecognition for browsers that use the webkit prefix
 // Fix: Cast window to `any` to access browser-specific SpeechRecognition APIs without TypeScript errors.
@@ -7,14 +8,16 @@ const SpeechRecognition = (window as any).SpeechRecognition || (window as any).w
 const hasSpeechRecognition = !!SpeechRecognition;
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, imageBase64?: string) => void;
   isLoading: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!hasSpeechRecognition) return;
@@ -65,15 +68,30 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
     setIsListening(!isListening);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
+    if ((input.trim() || selectedImage) && !isLoading) {
       if(isListening) {
         recognitionRef.current?.stop();
         setIsListening(false);
       }
-      onSendMessage(input);
+      onSendMessage(input, selectedImage || undefined);
       setInput('');
+      setSelectedImage(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
   
@@ -84,19 +102,47 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <form onSubmit={handleSubmit} className="w-full flex items-center gap-3 relative">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isListening ? "Listening..." : "Message Nexto..."}
-          disabled={isLoading}
-          className="w-full bg-gray-100 border border-gray-200 rounded-lg py-3 pr-28 pl-4 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-300 disabled:opacity-50"
-          autoComplete="off"
-        />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+    <div className="flex flex-col items-center w-full">
+      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2 relative">
+        {selectedImage && (
+          <div className="relative self-start mb-2 inline-block">
+            <img src={selectedImage} alt="Preview" className="h-20 w-20 object-cover rounded-lg shadow-sm border border-gray-200" />
+            <button
+              type="button"
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+        <div className="w-full flex items-center relative">
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-blue-500 transition-colors z-10 bg-transparent"
+            title="Upload Image"
+          >
+            <ImagePlus size={20} />
+          </button>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isListening ? "Listening..." : "Message Nexto..."}
+            disabled={isLoading}
+            className="w-full bg-gray-100 border border-gray-200 rounded-lg py-3 pr-28 pl-12 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-300 disabled:opacity-50"
+            autoComplete="off"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
             {hasSpeechRecognition && (
                  <button
                     type="button"
@@ -123,9 +169,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
             )}
             <button
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || (!input.trim() && !selectedImage)}
               className={`p-2 rounded-md transition-all duration-300 ${
-                  !(isLoading || !input.trim())
+                  !(isLoading || (!input.trim() && !selectedImage))
                   ? 'bg-blue-500 text-white hover:bg-blue-600'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
@@ -142,6 +188,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
                 </svg>
               )}
             </button>
+          </div>
         </div>
       </form>
       <p className="text-xs text-gray-400 mt-2">Nexto can make mistakes. Verify important information.</p>

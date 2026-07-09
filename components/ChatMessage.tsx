@@ -48,8 +48,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLoading }) => {
         animate={{ opacity: 1, y: 0, x: 0 }}
         className="flex justify-end items-start gap-3"
       >
-        <div className="bg-blue-500 text-white rounded-xl rounded-br-none p-3 max-w-lg shadow-md">
-          <p className="whitespace-pre-wrap">{message.content}</p>
+        <div className="bg-blue-500 text-white rounded-xl rounded-br-none p-3 max-w-lg shadow-md flex flex-col gap-2">
+          {message.image && (
+            <img src={message.image} alt="User uploaded" className="max-w-[200px] rounded-lg border border-blue-400" />
+          )}
+          {message.content && (
+            <p className="whitespace-pre-wrap">{message.content}</p>
+          )}
         </div>
         <UserAvatar className="w-8 h-8" />
       </motion.div>
