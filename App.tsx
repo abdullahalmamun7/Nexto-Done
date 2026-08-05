@@ -151,14 +151,15 @@ const App: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button 
             onClick={() => setIsSylhetyAIOpen(true)}
-            className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors rounded-full flex items-center gap-1.5 border border-blue-200 shadow-sm whitespace-nowrap"
-            aria-label="Switch to Sylhety AI"
+            className="px-2 py-1 text-[10px] sm:text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors rounded-full flex items-center gap-1 border border-blue-200 shadow-sm whitespace-nowrap"
+            aria-label="Switch to Sylhety"
           >
-            <Bot size={14} />
-            Switch to Sylhety AI
+            <Bot size={12} />
+            <span className="hidden sm:inline">Switch to Sylhety</span>
+            <span className="inline sm:hidden">Sylhety</span>
           </button>
           <button 
             onClick={() => setIsHistoryOpen(true)}
@@ -369,7 +370,7 @@ const App: React.FC = () => {
       {/* Sylhety AI Modal */}
       <AnimatePresence>
         {isSylhetyAIOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 sm:p-6">
+          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4 sm:p-6">
             {/* Backdrop */}
             <motion.div 
               initial={{ opacity: 0 }}
@@ -385,7 +386,7 @@ const App: React.FC = () => {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className={`relative bg-white shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
-                isSylhetyAIFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-4xl h-[85vh] rounded-2xl'
+                isSylhetyAIFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl h-[90vh] rounded-2xl'
               }`}
             >
               {/* Header */}
@@ -395,6 +396,17 @@ const App: React.FC = () => {
                   <span>Sylhety AI</span>
                 </h2>
                 <div className="flex items-center gap-1">
+                  <a 
+                    href="https://sylhety-ai.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors text-xs font-medium flex items-center gap-1"
+                    title="Open in new tab if it doesn't load"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    <span className="hidden sm:inline">Open in New Tab</span>
+                  </a>
+                  <div className="w-px h-5 bg-gray-300 mx-1"></div>
                   <button 
                     onClick={() => {
                         const iframe = document.getElementById('sylhety-iframe') as HTMLIFrameElement;
